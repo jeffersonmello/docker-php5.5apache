@@ -24,8 +24,12 @@ RUN apt-get update && apt-get install -y \
     wget \
     lynx \
     software-properties-common \
-    && add-apt-repository ppa:ondrej/php \
-    && apt-get update && apt-get install -y \
+    php-pear \
+    php-dev \
+    && add-apt-repository ppa:ondrej/php && apt-get update
+
+# Instalar PHP e extensões
+RUN apt-get install -y \
     php5.6 \
     php5.6-bcmath \
     php5.6-bz2 \
@@ -41,20 +45,24 @@ RUN apt-get update && apt-get install -y \
     php5.6-pgsql \
     php5.6-soap \
     php5.6-xml \
-    php5.6-zip \
-    php-pear \
-    && pecl install memcached-2.2.0 redis \
-    && echo "extension=memcached.so" > /etc/php/5.6/apache2/conf.d/20-memcached.ini \
-    && echo "extension=redis.so" > /etc/php/5.6/apache2/conf.d/20-redis.ini \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    php5.6-zip
+
+# Atualizar canal PECL
+RUN pecl channel-update pecl.php.net
+
+# Instalar e habilitar extensões PECL individualmente
+# RUN apt-get install -y zlib1g-dev libmemcached-dev && pecl install memcached-2.2.0 && echo "extension=memcached.so" > /etc/php/5.6/apache2/conf.d/20-memcached.ini
+RUN pecl install redis && echo "extension=redis.so" > /etc/php/5.6/apache2/conf.d/20-redis.ini
+
+# Limpeza após a instalação
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Habilitar módulos do Apache
 RUN a2enmod rewrite headers ssl proxy proxy_http
 
 # Instalar Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-    && ln -s $(composer config --global home) /root/composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+    ln -s $(composer config --global home) /root/composer
 
 # Configurar ambiente para Composer
 ENV PATH=$PATH:/root/composer/vendor/bin COMPOSER_ALLOW_SUPERUSER=1
