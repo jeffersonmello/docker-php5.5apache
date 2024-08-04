@@ -1,83 +1,12 @@
-# Usar a imagem base do Ubuntu mais recente
-FROM ubuntu:latest
+FROM jeffersonmello/php55apache
 
-# Definir o ambiente como não interativo para evitar prompts durante a instalação
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Atualizar pacotes e instalar dependências necessárias
-RUN apt-get update && apt-get install -y \
-    apache2 \
-    curl \
-    git \
-    libfreetype6-dev \
-    libicu-dev \
-    libjpeg-dev \
-    libldap2-dev \
-    libmcrypt-dev \
-    libmemcached-dev \
-    libmysqlclient-dev \
-    libpng-dev \
-    libpq-dev \
-    libxml2-dev \
-    openssh-client \
-    rsync \
-    wget \
-    lynx \
-    software-properties-common \
-    php-pear \
-    php-dev \
-    && add-apt-repository ppa:ondrej/php && apt-get update
-
-# Instalar PHP e extensões
-RUN apt-get install -y \
-    php5.6 \
-    php5.6-bcmath \
-    php5.6-bz2 \
-    php5.6-calendar \
-    php5.6-exif \
-    php5.6-gd \
-    php5.6-intl \
-    php5.6-mbstring \
-    php5.6-mcrypt \
-    php5.6-mysql \
-    php5.6-mysqli \
-    php5.6-opcache \
-    php5.6-pgsql \
-    php5.6-soap \
-    php5.6-xml \
-    php5.6-zip
-
-# Atualizar canal PECL
-RUN pecl channel-update pecl.php.net
-
-# Instalar e habilitar extensões PECL individualmente
-# RUN apt-get install -y zlib1g-dev libmemcached-dev && pecl install memcached-2.2.0 && echo "extension=memcached.so" > /etc/php/5.6/apache2/conf.d/20-memcached.ini
-RUN pecl install redis && echo "extension=redis.so" > /etc/php/5.6/apache2/conf.d/20-redis.ini
-
-# Limpeza após a instalação
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Habilitar módulos do Apache
-RUN a2enmod rewrite headers ssl proxy proxy_http
-
-# Instalar Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
-    ln -s $(composer config --global home) /root/composer
-
-# Configurar ambiente para Composer
-ENV PATH=$PATH:/root/composer/vendor/bin COMPOSER_ALLOW_SUPERUSER=1
-
-# Adicionar configuração sysctl para aumentar o número máximo de arquivos
-RUN echo "fs.file-max = 500000" >> /etc/sysctl.conf
-
-# Adicionar script de inicialização para definir ulimit
-RUN echo '#!/bin/bash\nulimit -n 100000\nexec "$@"' > /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-
-# Configurar o Apache para exibir o status do servidor
-COPY default.conf /etc/apache2/sites-available/000-default.conf
-RUN a2ensite 000-default
-
-# Usar o script de inicialização personalizado
-ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["apache2-foreground"]
+RUN rm /etc/apt/sources.list \
+    && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 7638D0442B90D010 8B48AD6246925553 CBF8D6FD518E17E1 \
+    && echo "deb http://archive.debian.org/debian/ jessie main" > /etc/apt/sources.list \
+    && echo "deb-src http://archive.debian.org/debian/ jessie main" >> /etc/apt/sources.list \
+    && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until \
+    && echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure \
+    && echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure \
+    && apt-get update --allow-releaseinfo-change \
+    && apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages libfontconfig1 libxrender1 \
+    && a2enmod headers
