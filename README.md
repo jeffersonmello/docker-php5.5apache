@@ -1,4 +1,6 @@
-# docker-php5.5apache
+# php5.5
+
+Docker container with php 5.5 and apache
 
 ## Build image
 
