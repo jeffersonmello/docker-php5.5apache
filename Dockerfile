@@ -13,7 +13,7 @@ RUN rm /etc/apt/sources.list \
 
 # Copia cacert.pem para o diretório de certificados
 COPY cacert.pem /etc/ssl/certs/cacert.pem
-RUN RM /etc/ssl/certs/ca-certificates.crt \
+RUN rm /etc/ssl/certs/ca-certificates.crt \
     && ln -s /etc/ssl/certs/cacert.pem /etc/ssl/certs/ca-certificates.crt
 
 # Adicionar configuração sysctl para aumentar o número máximo de arquivos
